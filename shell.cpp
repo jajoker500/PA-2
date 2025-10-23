@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cstring>
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -21,8 +22,15 @@ using namespace std;
 
 int main () {
     for (;;) {
+
         // need date/time, username, and absolute path to current dir
-        cout << YELLOW << "Shell$" << NC << " ";
+        size_t const SIZE = 256;
+        char buf[SIZE];
+        time_t timer = time(NULL);
+        char* time_show = ctime(&timer);
+        time_show[strcspn(time_show, "\n")] = ' ';
+        
+        cout << YELLOW << time_show << getenv("USER") << ":" << getcwd(buf, SIZE) << "$" << NC << " ";
         
         // get user inputted command
         string input;
