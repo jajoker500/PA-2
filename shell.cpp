@@ -41,6 +41,7 @@ int main () {
             break;
         }
 
+
         // get tokenized commands from user input
         Tokenizer tknr(input);
         if (tknr.hasError()) {  // continue to next prompt if input had an error
@@ -49,41 +50,45 @@ int main () {
 
         // // print out every command token-by-token on individual lines
         // // prints to cerr to avoid influencing autograder
-        // for (auto cmd : tknr.commands) {
-        //     for (auto str : cmd->args) {
-        //         cerr << "|" << str << "| ";
-        //     }
-        //     if (cmd->hasInput()) {
-        //         cerr << "in< " << cmd->in_file << " ";
-        //     }
-        //     if (cmd->hasOutput()) {
-        //         cerr << "out> " << cmd->out_file << " ";
-        //     }
-        //     cerr << endl;
-        // }
-
-        // fork to create child
-        pid_t pid = fork();
-        if (pid < 0) {  // error check
-            perror("fork");
-            exit(2);
+        for (auto cmd : tknr.commands) {
+            for (auto str : cmd->args) {
+                cerr << "|" << str << "| ";
+            }
+            if (cmd->hasInput()) {
+                cerr << "in< " << cmd->in_file << " ";
+            }
+            if (cmd->hasOutput()) {
+                cerr << "out> " << cmd->out_file << " ";
+            }
+            cerr << endl;
         }
 
-        if (pid == 0) {  // if child, exec to run command
-            // run single commands with no arguments
-            char* args[] = {(char*) tknr.commands.at(0)->args.at(0).c_str(), nullptr};
-
-            if (execvp(args[0], args) < 0) {  // error check
-                perror("execvp");
+        for(int i = 0; i < count; ++i) {
+            // fork to create child
+            pid_t pid = fork();
+            if (pid < 0) {  // error check
+                perror("fork");
                 exit(2);
             }
-        }
-        else {  // if parent, wait for child to finish
-            int status = 0;
-            waitpid(pid, &status, 0);
-            if (status > 1) {  // exit if child didn't exec properly
-                exit(status);
+
+            if (pid == 0) {  // if child, exec to run command
+            // run single commands with no arguments
+            char* args[] = {(char*) tknr.commands.at(i)->args.at(i).c_str(), nullptr};
+
+                if (execvp(args[0], args) < 0) {  // error check
+                    perror("execvp");
+                    exit(2);
+                }
+            }
+
+            else {  // if parent, wait for child to finish
+                int status = 0;
+                waitpid(pid, &status, 0);
+                if (status > 1) {  // exit if child didn't exec properly
+                    exit(status);
+                }
             }
         }
+
     }
 }
