@@ -63,8 +63,18 @@ int main () {
             cerr << endl;
         }
 
-        for(int i = 0; i < count; ++i) {
-            // fork to create child
+        size_t cmdCount = tknr.commands.size();
+
+        int fds[((cmdCount - 1) * 2)]; // creates place for pipe ***NEEED DYNAMIC ALLOCATION***
+        for(int i = 0; i < cmdCount - 1; ++i) {
+            if (pipe(fds + i * 2) == -1) { // pipes and checks if error while pipping
+                cout << "Error Pipping \n";
+                return 1; // error while pipping so exit entire program
+            }
+        }
+        
+        for(size_t i = 0; i < cmdCount; ++i) {
+                // fork to create child
             pid_t pid = fork();
             if (pid < 0) {  // error check
                 perror("fork");
@@ -72,8 +82,28 @@ int main () {
             }
 
             if (pid == 0) {  // if child, exec to run command
-            // run single commands with no arguments
-            char* args[] = {(char*) tknr.commands.at(i)->args.at(i).c_str(), nullptr};
+                if(i > 0) dup2(fds[(i - 1) * 2], STDIN_FILENO);
+                if(i < cmdCount - 1) dup2(fds[(i * 2) + 1], STDOUT_FILENO);
+
+                for(int j = 0; j < (cmdCount - 1) * 2; ++j) {
+                    close(fds[j]);
+                }
+
+                if(tknr.commands.at(i)->hasInput()) {
+                    dup2(fds[i], STDIN_FILENO); // replace standard input with read end of pipe
+                    close(fds[i + 1]); // close write end of pipe
+                }
+                else if(tknr.commands.at(i)->hasOutput()) {
+                    dup2(fds[i + 1], STDOUT_FILENO); // redirect the standard output to the write of the pipe
+                    close(fds[i]); // close read of pipe
+                }
+
+                size_t size = tknr.commands.at(i)->args.size();
+                char** args = new char*[size+1];
+                for(size_t j = 0; j < size; ++j) {
+                    args[j] = (char*) tknr.commands.at(i)->args.at(j).c_str();
+                }
+                args[size] = nullptr;
 
                 if (execvp(args[0], args) < 0) {  // error check
                     perror("execvp");
@@ -82,6 +112,8 @@ int main () {
             }
 
             else {  // if parent, wait for child to finish
+                close(fds[i]); // close read
+                close(fds[i + 1]); // close write of pipe
                 int status = 0;
                 waitpid(pid, &status, 0);
                 if (status > 1) {  // exit if child didn't exec properly
@@ -89,6 +121,5 @@ int main () {
                 }
             }
         }
-
     }
 }
