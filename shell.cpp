@@ -34,7 +34,9 @@ int main () {
         string finalTime(time_show);
         finalTime = finalTime.substr(4, 15);
         
-        cout << YELLOW << finalTime << " " << getenv("USER") << ":" << getcwd(buf, SIZE) << "$" << NC << " ";
+        // cout << YELLOW << finalTime << " " << getenv("USER") << ":" << getcwd(buf, SIZE) << "$" << NC << " ";
+        cout << getenv("USER") << " " << finalTime << " :" << getcwd(buf, SIZE) << "$"; 
+        cout.flush();
         
         // get user inputted command
         string input;
