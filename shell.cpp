@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstring>
+#include <fcntl.h>
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -63,16 +64,41 @@ int main () {
             cerr << endl;
         }
 
+        static string dirStorage; // stores previous directory
+
+        if(tknr.commands.at(0)->args.at(0) == "cd") { // if cd
+            char currDir[SIZE]; // to store current directory
+            getcwd(currDir, sizeof(currDir)); // gets the cwd current working directory
+            if(tknr.commands.at(0)->args.size() == 1) {} // if nothing dont try to access
+            else if(tknr.commands.at(0)->args.at(1) == "-") { // go to previous directory
+                if(dirStorage.empty()) { // if no previous directory
+                    perror("no previous directory");
+                    exit(2);
+                }
+                chdir(dirStorage.c_str()); // set the directory to the previous directory
+            }
+            else {
+                chdir(tknr.commands.at(0)->args.at(1).c_str()); // current directory the argument
+            }
+
+            dirStorage = currDir; // store the current directory as the prev directory
+
+            continue;
+        }
+
+        signal(SIGCHLD, SIG_IGN); // if child signal ignore it (reaps zombies)
+
         size_t cmdCount = tknr.commands.size();
 
-        int fds[((cmdCount - 1) * 2)]; // creates place for pipe ***NEEED DYNAMIC ALLOCATION***
-        for(int i = 0; i < cmdCount - 1; ++i) {
+        int* fds = new int[((cmdCount - 1) * 2)]; // creates place for pipe ***NEEED DYNAMIC ALLOCATION***
+        for(size_t i = 0; i < cmdCount - 1; ++i) {
             if (pipe(fds + i * 2) == -1) { // pipes and checks if error while pipping
                 cout << "Error Pipping \n";
                 return 1; // error while pipping so exit entire program
-            }
+            } // *** finish commenting after submission ***
         }
-        
+
+        vector<pid_t> pids;
         for(size_t i = 0; i < cmdCount; ++i) {
                 // fork to create child
             pid_t pid = fork();
@@ -80,22 +106,32 @@ int main () {
                 perror("fork");
                 exit(2);
             }
-
+            pids.push_back(pid);
             if (pid == 0) {  // if child, exec to run command
                 if(i > 0) dup2(fds[(i - 1) * 2], STDIN_FILENO);
                 if(i < cmdCount - 1) dup2(fds[(i * 2) + 1], STDOUT_FILENO);
 
-                for(int j = 0; j < (cmdCount - 1) * 2; ++j) {
+                for(size_t j = 0; j < (cmdCount - 1) * 2; ++j) {
                     close(fds[j]);
                 }
 
                 if(tknr.commands.at(i)->hasInput()) {
-                    dup2(fds[i], STDIN_FILENO); // replace standard input with read end of pipe
-                    close(fds[i + 1]); // close write end of pipe
+                    int inFile = open(tknr.commands.at(i)->in_file.c_str(), O_RDONLY);
+                    if(inFile < 0) {
+                        perror("Unable to open file to read");
+                        exit(2);
+                    }
+                    dup2(inFile, STDIN_FILENO);
+                    close(inFile);
                 }
-                else if(tknr.commands.at(i)->hasOutput()) {
-                    dup2(fds[i + 1], STDOUT_FILENO); // redirect the standard output to the write of the pipe
-                    close(fds[i]); // close read of pipe
+                if(tknr.commands.at(i)->hasOutput()) {
+                    int outFile = open(tknr.commands.at(i)->out_file.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+                    if(outFile < 0) {
+                        perror("Unable to open file to write");
+                        exit(2);
+                    }
+                    dup2(outFile, STDOUT_FILENO);
+                    close(outFile);
                 }
 
                 size_t size = tknr.commands.at(i)->args.size();
@@ -110,16 +146,26 @@ int main () {
                     exit(2);
                 }
             }
+        }
+        
+        for(size_t j = 0; j < (cmdCount - 1) * 2; ++j) {
+            close(fds[j]);
+        }
 
-            else {  // if parent, wait for child to finish
-                close(fds[i]); // close read
-                close(fds[i + 1]); // close write of pipe
-                int status = 0;
-                waitpid(pid, &status, 0);
+        int status = 0;
+        if(tknr.commands.back()->isBackground()) {
+            printf("we in the background baby");
+        }
+        else {
+            while(!pids.empty()) {
+                waitpid(pids.back(), &status, 0);
+                pids.pop_back();
                 if (status > 1) {  // exit if child didn't exec properly
                     exit(status);
                 }
             }
         }
+
+        delete[] fds;
     }
 }

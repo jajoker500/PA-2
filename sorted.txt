@@ -1,0 +1,13 @@
+-rw-r--r-- 1 jackander1705 jackander1705      0 Oct 31 02:29 test.txt
+-rw-r--r-- 1 jackander1705 jackander1705      0 Oct 31 02:31 files.txt
+-rw-rw-r-- 1 jackander1705 jackander1705    518 Oct 23 19:46 makefile
+-rw-rw-r-- 1 jackander1705 jackander1705   1164 Oct 23 19:46 Tokenizer.h
+-rw-rw-r-- 1 jackander1705 jackander1705   1601 Oct 23 19:46 Command.h
+-rw-rw-r-- 1 jackander1705 jackander1705   2132 Oct 23 19:46 Tokenizer.cpp
+-rw-rw-r-- 1 jackander1705 jackander1705   2387 Oct 23 19:46 Command.cpp
+-rw-rw-r-- 1 jackander1705 jackander1705   4570 Oct 31 02:27 shell.cpp
+-rw-rw-r-- 1 jackander1705 jackander1705  35149 Oct 23 19:46 LICENSE
+-rwxrwxr-x 1 jackander1705 jackander1705    322 Oct 23 19:46 setup.sh
+-rwxrwxr-x 1 jackander1705 jackander1705   8812 Oct 23 19:46 pa2-tests.sh
+-rwxrwxr-x 1 jackander1705 jackander1705 944144 Oct 31 02:29 shell
+total 1004
