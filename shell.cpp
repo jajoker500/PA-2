@@ -25,13 +25,16 @@ int main () {
     for (;;) {
 
         // need date/time, username, and absolute path to current dir
+
         size_t const SIZE = 256;
         char buf[SIZE];
         time_t timer = time(NULL);
         char* time_show = ctime(&timer);
-        time_show[strcspn(time_show, "\n")] = ' ';
+        time_show[strcspn(time_show, "\n")] = '\0';
+        string finalTime(time_show);
+        finalTime = finalTime.substr(4, 15);
         
-        cout << YELLOW << time_show << getenv("USER") << ":" << getcwd(buf, SIZE) << "$" << NC << " ";
+        cout << YELLOW << finalTime << " " << getenv("USER") << ":" << getcwd(buf, SIZE) << "$" << NC << " ";
         
         // get user inputted command
         string input;
@@ -69,7 +72,9 @@ int main () {
         if(tknr.commands.at(0)->args.at(0) == "cd") { // if cd
             char currDir[SIZE]; // to store current directory
             getcwd(currDir, sizeof(currDir)); // gets the cwd current working directory
-            if(tknr.commands.at(0)->args.size() == 1) {} // if nothing dont try to access
+            if(tknr.commands.at(0)->args.size() == 1) {
+                chdir(getenv("HOME"));
+            } // if nothing dont try to access go home
             else if(tknr.commands.at(0)->args.at(1) == "-") { // go to previous directory
                 if(!dirStorage.empty()) { // if previous directory
                     chdir(dirStorage.c_str()); // set the directory to the previous directory
