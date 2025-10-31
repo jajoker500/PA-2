@@ -31,11 +31,11 @@ int main () {
         time_t timer = time(NULL);
         char* time_show = ctime(&timer);
         time_show[strcspn(time_show, "\n")] = '\0';
-        string finalTime(time_show);
-        finalTime = finalTime.substr(4, 15);
+        //string finalTime(time_show);
+        //finalTime = finalTime.substr(4, 15);
         
         // cout << YELLOW << finalTime << " " << getenv("USER") << ":" << getcwd(buf, SIZE) << "$" << NC << " ";
-        cout << getenv("USER") << " " << finalTime << " :" << getcwd(buf, SIZE) << "$"; 
+        cout << getenv("USER") << " " << time_show << " :" << getcwd(buf, SIZE) << "$"; 
         cout.flush();
         
         // get user inputted command
