@@ -71,14 +71,13 @@ int main () {
             getcwd(currDir, sizeof(currDir)); // gets the cwd current working directory
             if(tknr.commands.at(0)->args.size() == 1) {} // if nothing dont try to access
             else if(tknr.commands.at(0)->args.at(1) == "-") { // go to previous directory
-                if(dirStorage.empty()) { // if no previous directory
-                    perror("no previous directory");
-                    exit(2);
+                if(!dirStorage.empty()) { // if previous directory
+                    chdir(dirStorage.c_str()); // set the directory to the previous directory
                 }
-                chdir(dirStorage.c_str()); // set the directory to the previous directory
             }
             else {
-                chdir(tknr.commands.at(0)->args.at(1).c_str()); // current directory the argument
+                if(chdir(tknr.commands.at(0)->args.at(1).c_str()) != 0) // current directory the argument
+                    perror("did not change directory correctly");
             }
 
             dirStorage = currDir; // store the current directory as the prev directory
@@ -106,7 +105,10 @@ int main () {
                 perror("fork");
                 exit(2);
             }
-            pids.push_back(pid);
+
+            if(!tknr.commands.at(i)->isBackground()) 
+                pids.push_back(pid);
+            
             if (pid == 0) {  // if child, exec to run command
                 if(i > 0) dup2(fds[(i - 1) * 2], STDIN_FILENO);
                 if(i < cmdCount - 1) dup2(fds[(i * 2) + 1], STDOUT_FILENO);
